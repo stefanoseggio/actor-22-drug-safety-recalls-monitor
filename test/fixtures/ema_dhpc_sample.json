@@ -1,0 +1,42 @@
+{
+  "_fixtureProvenance": "Captured live from https://www.ema.europa.eu/en/documents/report/dhpc-output-json-report_en.json (real, unauthenticated GET request, robots.txt explicitly allows /*/documents/report/*.json$) on 2026-09-07 during actor-22 development. Field names and shapes are copied verbatim from the actual EMA JSON export, not assumed from memory.",
+  "meta": { "total_records": 174, "timestamp": "2026-09-07T06:05:31Z" },
+  "data": [
+    {
+      "category": "Human",
+      "name_of_medicine": "Jentadueto",
+      "procedure_number": "",
+      "active_substances": "linagliptin;metformin hydrochloride",
+      "dhpc_type": "Quality defect",
+      "regulatory_outcome": "",
+      "referral_name": "",
+      "atc_code_human": "A10BD11",
+      "atcvet_code_veterinary": "",
+      "therapeutic_area_mesh": "Diabetes Mellitus, Type 2",
+      "species": "",
+      "other_related_medicines_nationally_authorised": "",
+      "dissemination_date": "20/08/2026",
+      "first_published_date": "20/08/2026",
+      "last_updated_date": "",
+      "dhpc_url": "https://www.ema.europa.eu/en/medicines/dhpc/jentadueto"
+    },
+    {
+      "category": "Human",
+      "name_of_medicine": "Tavneos",
+      "procedure_number": "EMA/REF/0000325221",
+      "active_substances": "avacopan",
+      "dhpc_type": "Referral - Article 20 procedure",
+      "regulatory_outcome": "Revocation",
+      "referral_name": "Tavneos",
+      "atc_code_human": "L04",
+      "atcvet_code_veterinary": "",
+      "therapeutic_area_mesh": "Microscopic Polyangiitis;Wegener Granulomatosis",
+      "species": "",
+      "other_related_medicines_nationally_authorised": "",
+      "dissemination_date": "16/07/2026",
+      "first_published_date": "17/07/2026",
+      "last_updated_date": "",
+      "dhpc_url": "https://www.ema.europa.eu/en/medicines/dhpc/tavneos"
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+    "$schema": "https://apify.com/schemas/v1/input.ide.json",
+    "title": "Regulatory Medical Recalls & Drug Safety Monitor Configuration",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "sources": {
+            "title": "Regulators to query",
+            "type": "array",
+            "description": "FDA = US openFDA drug enforcement (recall) API. EMA = EU Direct Healthcare Professional Communications (DHPC) safety-alert JSON export. Both are independent regulator-native feeds with different fields, combined into one Unified Master Schema stream.",
+            "editor": "select",
+            "items": {
+                "type": "string",
+                "enum": ["fda", "ema"],
+                "enumTitles": ["FDA (US) - drug enforcement / recalls", "EMA (EU) - DHPC safety alerts"]
+            },
+            "default": ["fda", "ema"],
+            "minItems": 1
+        },
+        "maxItemsPerSource": {
+            "title": "Max records per source",
+            "type": "integer",
+            "description": "Hard cap on how many records to return per selected regulator this run, applied independently to FDA and EMA, both sorted newest-first. openFDA's own API caps a single request at 1000 results (verified live 2026-09-07); values above 1000 are paginated automatically via skip.",
+            "default": 100,
+            "minimum": 1,
+            "maximum": 5000
+        },
+        "onlyNew": {
+            "title": "Delta mode - only new or changed records since last run",
+            "type": "boolean",
+            "description": "When enabled, persists a content fingerprint per record between runs (in this actor's own named key-value store) and returns only records that are new since the last run OR whose status (FDA status / EMA regulatory_outcome) or other tracked fields changed since they were last seen - records that are byte-for-byte identical to last time are skipped. Recommended for recurring monitoring, so a status change on an already-known recall (e.g. Ongoing -> Terminated) is still surfaced, not silently suppressed just because the recall itself isn't brand new. Leave off for a full one-off extraction of every currently-visible record.",
+            "default": false
+        },
+        "dateRange": {
+            "title": "Filter by recency (source date field)",
+            "type": "string",
+            "description": "Optionally restrict results to records whose own date field (FDA report_date; EMA dissemination_date) falls within this window. Independent of onlyNew.",
+            "editor": "select",
+            "enum": ["24h", "7d", "30d"],
+            "enumTitles": ["Last 24 hours", "Last 7 days", "Last 30 days"]
+        },
+        "fdaClassification": {
+            "title": "FDA recall severity classification filter",
+            "type": "array",
+            "description": "Restrict FDA results to one or more FDA recall classification tiers (Class I = most severe / reasonable probability of serious harm or death, down to Class III = least severe). Ignored for EMA records, which use their own dhpc_type taxonomy instead (no equivalent tiering in the DHPC feed).",
+            "editor": "select",
+            "items": {
+                "type": "string",
+                "enum": ["Class I", "Class II", "Class III"]
+            }
+        },
+        "fdaApiKey": {
+            "title": "openFDA API key (optional)",
+            "type": "string",
+            "description": "Optional. Without a key, openFDA allows 240 requests/minute and 1,000 requests/day per IP address (verified live against https://open.fda.gov/apis/authentication/ on 2026-09-07). With a free key (open.fda.gov signup), the daily cap rises to 120,000 requests/day per key, same 240/minute. This actor's own request volume is trivially within the unauthenticated limit for normal use; the key is offered only for high-frequency scheduled runs.",
+            "editor": "textfield",
+            "isSecret": true
+        }
+    }
+}

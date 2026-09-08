@@ -1,0 +1,21 @@
+{
+    "$schema": "https://apify.com/schemas/v1/actor.ide.json",
+    "actorSpecification": 1,
+    "name": "actor-22-drug-safety-recalls-monitor",
+    "title": "Regulatory Medical Recalls & Drug Safety Monitor",
+    "description": "Combines the FDA's openFDA drug enforcement (recall) API and the EMA's DHPC safety-alert feed into one 18-field UMS stream, tagged by jurisdiction and agency, sorted newest-first, with a mandatory regulatory-data disclaimer on every record.",
+    "version": "2.0",
+    "buildTag": "latest",
+    "minMemoryMbytes": 256,
+    "maxMemoryMbytes": 512,
+    "meta": {
+        "templateId": "ts-crawlee-cheerio",
+        "generatedBy": "Claude Code with Claude Sonnet 5"
+    },
+    "inputSchema": "./input_schema.json",
+    "outputSchema": "./output_schema.json",
+    "storages": {
+        "dataset": "./dataset_schema.json"
+    },
+    "changelog": "../CHANGELOG.md"
+}
