@@ -1,21 +1,16 @@
-# Regulatory Medical Recalls & Drug Safety Monitor
+# Drug Safety & Recall Monitor - FDA & EMA Regulatory Alerts (Global Pharma Compliance)
 
-Combines the **FDA's openFDA drug enforcement (recall) API** and the **EMA's Direct Healthcare Professional Communications (DHPC)** safety-alert feed into one normalized stream - US and EU drug safety data, one schema, one Actor. Every record carries a mandatory, runtime-enforced regulatory-data disclaimer. Try it with the default input (both regulators, 100 records each) and see real, live recall and safety-alert data in seconds.
+## Executive Value Proposition
 
-## Why use this Actor?
+Checking FDA's openFDA drug enforcement database and EMA's Direct Healthcare Professional Communications (DHPC) feed separately means learning two different field structures, two different pagination behaviors, and manually diffing results run-over-run just to notice that a recall's status changed. This Actor normalizes both into one 18-field schema, tagged by jurisdiction and regulating agency and sorted newest-first, and can be scheduled to surface only what's new or changed since the last run instead of the full list every time. What would otherwise be two separate manual feed checks - and a spreadsheet to track what you've already seen - becomes one scheduled Actor run with structured, exportable output and a dedicated "Change detection" dataset view for what's new or different since last time.
 
-- **Two regulators, one schema.** FDA recalls and EMA safety communications use completely different native field names and structures - this Actor normalizes both into the same 18-field Unified Master Schema so you can query, filter, and pipe them into the same downstream system without writing two integrations.
-- **Change detection, not just extraction.** Run it on a schedule with `onlyNew: true` and get notified when a recall's status changes (e.g. FDA `Ongoing` -> `Terminated`) or an EMA safety outcome updates - not just when a brand-new record appears.
-- **Compliance and pharmacovigilance teams**: track recalls/alerts for products or therapeutic areas you monitor, filtered by FDA severity classification.
-- **Market/competitive intelligence**: watch a competitor's or category's recall activity across both US and EU jurisdictions in one feed.
-- **Data teams building a compliance dashboard or alerting pipeline**: get clean, typed, disclaimer-tagged JSON instead of screen-scraping two different regulator websites.
+## Who uses this
 
-## How to use it
+- **Pharmacovigilance and drug-safety teams** - track recalls and DHPC safety communications for specific products or therapeutic areas, and get an explicit `STATUS_CHANGE` event when an FDA recall flips from `Ongoing` to `Terminated` or an EMA `regulatory_outcome` updates, instead of re-reading the full feed to spot the difference yourself.
+- **Pharmacy and hospital procurement risk screening** - before or during a purchasing decision, check whether a manufacturer or product category currently has an active FDA recall, filtered by severity (`Class I` = most severe) via the `fdaClassification` input, alongside any related EU safety communication.
+- **Competitive and market intelligence** - watch a competitor's or category's recall and safety-alert activity across both US and EU jurisdictions in a single feed, segmented by the `jurisdiction` and `awarding_or_regulating_agency` fields on every record.
 
-1. Open the Actor's Input tab (or use the JSON example below).
-2. Pick `sources` (FDA, EMA, or both - default both), a `maxItemsPerSource` cap, and optionally a `dateRange` window or FDA severity filter.
-3. For recurring monitoring, enable `onlyNew` so repeat runs only deliver what's new or changed since last time.
-4. Run it. Results land in the dataset - export as JSON, CSV, Excel, or pull via the API.
+## Input
 
 ```json
 {
@@ -26,20 +21,18 @@ Combines the **FDA's openFDA drug enforcement (recall) API** and the **EMA's Dir
 }
 ```
 
-## Input
-
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `sources` | array | `["fda", "ema"]` | Which regulator(s) to query. |
-| `maxItemsPerSource` | integer | `100` | Hard cap per source, newest-first. openFDA auto-paginates past its own 1,000/request cap when this is higher. |
-| `onlyNew` | boolean | `false` | Delta mode: only deliver records that are new, or whose status/content changed, since the last run (persisted in this Actor's own key-value store). |
-| `dateRange` | string | - | `24h` / `7d` / `30d`, filtered on each source's own date field. |
-| `fdaClassification` | array | - | Restrict FDA results to one or more severity tiers (Class I = most severe). Ignored for EMA. |
-| `fdaApiKey` | string | - | Optional free openFDA key - raises the daily request cap from 1,000 to 120,000. Not needed for normal use. |
+| `sources` | array | `["fda", "ema"]` | Which regulator(s) to query: `fda` (US openFDA drug enforcement/recall API) and/or `ema` (EU DHPC safety-alert JSON export). |
+| `maxItemsPerSource` | integer | `100` | Hard cap on records returned per selected source this run, applied independently to FDA and EMA, both sorted newest-first. openFDA's own API caps a single request at 1,000 results; values above that are paginated automatically via `skip`. Range 1-5000. |
+| `onlyNew` | boolean | `false` | Delta mode: only deliver records that are new, or whose status/other tracked fields changed, since the last run (persisted in this Actor's own named key-value store). |
+| `dateRange` | string | - | `24h` / `7d` / `30d`, filtered on each source's own date field (FDA `report_date`; EMA `dissemination_date`). |
+| `fdaClassification` | array | - | Restrict FDA results to one or more severity tiers (`Class I`, `Class II`, `Class III`; Class I = most severe). Ignored for EMA, which has no equivalent tiering in its DHPC feed. |
+| `fdaApiKey` | string | - | Optional free openFDA key (secret field). Without a key, openFDA allows 240 requests/minute and 1,000 requests/day per IP; a free key raises the daily cap to 120,000. Not needed for normal use volumes. |
 
 ## Output
 
-One record per recall/alert, in the shared 18-field envelope plus source-specific native fields:
+One record per recall or safety alert, in a shared 18-field envelope plus source-specific native fields, with a mandatory disclaimer field on every record:
 
 ```json
 {
@@ -58,46 +51,42 @@ One record per recall/alert, in the shared 18-field envelope plus source-specifi
   "classification": "Class I",
   "productDescription": "Kian Pee Wan Capsules, 30-count bottles",
   "reasonForRecall": "Marketed Without an Approved NDA/ANDA",
-  "regulatoryDataDisclaimer": "This record is sourced directly from the named regulator's own public enforcement/safety-communication feed..."
+  "regulatoryDataDisclaimer": "This record is sourced directly from the named regulator's own public enforcement/safety-communication feed (US FDA openFDA drug enforcement API, or EU EMA Direct Healthcare Professional Communications). It has not been independently medically verified by this actor, may not reflect the regulator's current live status, and is not intended as clinical or consumer medical advice. Consult the source regulator and a qualified healthcare professional before making any medical or clinical decision."
 }
 ```
 
-You can download the dataset in various formats such as JSON, HTML, CSV, or Excel.
+You can download the dataset in JSON, HTML, CSV, or Excel format, or pull it via the Apify API.
 
 ### Field reference
 
 | Field | Description |
 |---|---|
-| `event_type` | First seen: `SANCTION` (FDA) / `NEW_LISTING` (EMA). Repeat sighting: `STATUS_CHANGE`, `UPDATED`, or `SNAPSHOT_NO_DIFF`. See "Delta mode" below. |
-| `status_or_estado` | FDA `status` (Ongoing/Terminated/Completed) or EMA `regulatory_outcome`. |
+| `recordSource` | `fda_enforcement` or `ema_dhpc` - which feed produced this record. |
+| `record_id` | Stable, source-prefixed id: `fda:<recall_number>` or `ema:<slug>:<dissemination_date>`. |
+| `event_type` | First seen: `SANCTION` (FDA) or `NEW_LISTING` (EMA). Repeat sighting: `STATUS_CHANGE`, `UPDATED`, or `SNAPSHOT_NO_DIFF`. |
+| `status_or_estado` | FDA `status` (`Ongoing`/`Terminated`/`Completed`) or EMA `regulatory_outcome`. |
 | `jurisdiction` | `US` or `EU`. |
-| `regulatoryDataDisclaimer` | Mandatory on every record - see "Compliance" below. |
-| *(FDA-only)* `classification`, `recallingFirm`, `distributionPattern`, `reasonForRecall`, `city`/`state`/`country` | Native FDA fields, null on EMA records. |
-| *(EMA-only)* `nameOfMedicine`, `activeSubstances`, `dhpcType`, `atcCodeHuman`, `therapeuticAreaMesh` | Native EMA fields, null on FDA records. |
+| `awarding_or_regulating_agency` | The regulator that issued the recall or alert (e.g. FDA, EMA). |
+| `regulatoryDataDisclaimer` | Mandatory on every record - see Reliability below. |
+| *(FDA-only)* | `classification`, `productDescription`, `reasonForRecall`, `recallingFirm`, `distributionPattern`, `voluntaryMandated`, `recallNumber`, `eventId`, `city`, `state`, `country` - null on EMA records. |
+| *(EMA-only)* | `nameOfMedicine`, `activeSubstances`, `dhpcType`, `atcCodeHuman`, `therapeuticAreaMesh`, `procedureNumber`, `regulatoryOutcome` - null on FDA records. |
 
-## Delta mode - change detection across runs
+## Reliability
 
-Enable `onlyNew: true` on a scheduled task and this Actor persists a content fingerprint per record (in its own named key-value store, so it survives between runs) and only delivers what's actually new or different:
+**Change detection, not a flat seen-list.** Every record gets a pair of content fingerprints: one hashed over just its status field (FDA `status` or EMA `regulatory_outcome`), one over its other mutable fields. On a repeat sighting, comparing the current pair against the stored pair produces `STATUS_CHANGE` (status differs), `UPDATED` (other tracked fields differ), or `SNAPSHOT_NO_DIFF` (identical) - so a recall flipping from `Ongoing` to `Terminated` is surfaced even though the record itself "was seen before."
 
-- **`SANCTION` / `NEW_LISTING`** - first time this exact record has been seen.
-- **`STATUS_CHANGE`** - the record's status changed since last time (FDA `Ongoing` -> `Terminated`, or an EMA `regulatory_outcome` update).
-- **`UPDATED`** - some other field changed (e.g. a corrected recall description) but status didn't.
-- **`SNAPSHOT_NO_DIFF`** - identical to last time; skipped from delivery when `onlyNew` is on.
+**State that actually persists.** Fingerprints are stored in this Actor's own named key-value store (not the run-scoped default store), so they survive between separate scheduled runs rather than resetting every time. State is capped at 5,000 entries per source, evicting the least-recently-seen entries first. If a run ever encounters an unrecognized or older state shape, it treats it as absent and re-baselines cleanly rather than attempting a risky migration.
 
-There's no "closed/removed" event: neither regulator is known to remove a historical record from its feed once published, so this Actor never claims to know something disappeared.
+**Retry logic tuned for these two APIs.** HTTP 429 (rate-limited) and 5xx responses are retried with exponential backoff plus jitter; a `Retry-After` header, when either regulator sends one, is honored as the authoritative delay. Other 4xx responses (400, 404, etc.) are treated as permanent client errors and are not retried.
+
+**No fabricated "closed" event.** Neither regulator is known to remove a historical record once published - a `Terminated` FDA recall stays queryable, and EMA DHPCs are permanent regulator communications - and this Actor fetches a bounded, newest-first window per run rather than exhaustively walking each source's full register. So it never reports a record as removed or closed; it only reports what it can actually verify (new, changed, or unchanged).
 
 ## Pricing
 
-Pay-per-event: **$0.001 per delivered record**, plus a small one-time actor-start charge. A default 100-per-source run (200 records) costs about $0.20. No idle-server or per-minute charges.
+Pay-per-event: **$0.001 per delivered record**, plus a small one-time Actor-start charge. A default run (100 records per source, both regulators enabled = up to 200 records) costs roughly $0.20. No idle-server or per-minute charges - you pay for delivered records, not runtime.
 
-## Compliance and data provenance
+## Support & Enterprise SLA
 
-Both sources are genuinely open, unauthenticated, publisher-sanctioned feeds - no CAPTCHA-solving, no login-wall bypass, no WAF evasion anywhere in this Actor. FDA openFDA's own terms explicitly invite this kind of public use; EMA's `robots.txt` explicitly allows the DHPC export path used here. Every record carries a mandatory `regulatoryDataDisclaimer` field - this data is sourced directly from each regulator's own public feed, has not been independently medically verified by this Actor, and is not intended as clinical or consumer medical advice.
+This is an independent developer-run Actor, not a vendor-backed enterprise product - there is no contractual SLA, and none is claimed here. Issues, bugs, or source-coverage requests (e.g. a regulator not yet covered) can be filed via the Apify Store's Issues tab; typical response time is within about 48 hours.
 
-## Known limitations
-
-- EMA's JSON export is a full snapshot per fetch (no server-side date filtering) - `dateRange` is applied client-side after download, which is accurate but means the EMA request itself is always a full download regardless of the window chosen.
-- No `CLOSED`/removal event - see "Delta mode" above for why.
-- FDA classification filtering only applies to FDA results; EMA has no equivalent severity tiering in its DHPC feed.
-
-Questions or a source-coverage request (e.g. a specific regulator not yet covered)? Use the Issues tab - custom extensions are available.
+The mandatory `regulatoryDataDisclaimer` field on every record is a data-integrity feature, not a legal disclaimer bolted on to limit liability: both the FDA and EMA feeds this Actor reads are genuinely open, unauthenticated, publisher-sanctioned sources, and the disclaimer exists so downstream consumers always know, on a per-record basis, that what they're looking at is unverified regulator data - not medical advice, and not independently confirmed by this Actor - before they act on it.
