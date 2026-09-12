@@ -1,0 +1,20 @@
+{
+  "oneLineDescription": "Combines FDA openFDA drug enforcement (recall) API and EMA DHPC safety-alert feed into one normalized, pay-per-event schema with real cross-run change detection.",
+  "topics": [
+    "apify",
+    "drug-safety",
+    "fda",
+    "typescript",
+    "web-scraping",
+    "ema",
+    "openfda",
+    "pharmacovigilance",
+    "drug-recalls",
+    "regulatory-compliance",
+    "change-detection",
+    "pay-per-event",
+    "apify-actor",
+    "dhpc",
+    "compliance-monitoring"
+  ]
+}

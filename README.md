@@ -1,5 +1,12 @@
 # Drug Safety & Recall Monitor - FDA & EMA Regulatory Alerts (Global Pharma Compliance)
 
+[![Built for Apify](https://img.shields.io/badge/Built%20for-Apify-24A6E9?style=flat-square&logo=apify&logoColor=white)](https://apify.com)
+[![Pay-Per-Event](https://img.shields.io/badge/Pay--Per--Event-%240.001%2Fevent-4CAF50?style=flat-square)](https://apify.com/stefano_seggio/actor-22-drug-safety-recalls-monitor)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-D22128?style=flat-square)](./LICENSE)
+
+[![Run this Actor on Apify](https://apify.com/img/run-on-apify.svg)](https://apify.com/stefano_seggio/actor-22-drug-safety-recalls-monitor)
+
 ## Executive Value Proposition
 
 Checking FDA's openFDA drug enforcement database and EMA's Direct Healthcare Professional Communications (DHPC) feed separately means learning two different field structures, two different pagination behaviors, and manually diffing results run-over-run just to notice that a recall's status changed. This Actor normalizes both into one 18-field schema, tagged by jurisdiction and regulating agency and sorted newest-first, and can be scheduled to surface only what's new or changed since the last run instead of the full list every time. What would otherwise be two separate manual feed checks - and a spreadsheet to track what you've already seen - becomes one scheduled Actor run with structured, exportable output and a dedicated "Change detection" dataset view for what's new or different since last time.
@@ -9,6 +16,22 @@ Checking FDA's openFDA drug enforcement database and EMA's Direct Healthcare Pro
 - **Pharmacovigilance and drug-safety teams** - track recalls and DHPC safety communications for specific products or therapeutic areas, and get an explicit `STATUS_CHANGE` event when an FDA recall flips from `Ongoing` to `Terminated` or an EMA `regulatory_outcome` updates, instead of re-reading the full feed to spot the difference yourself.
 - **Pharmacy and hospital procurement risk screening** - before or during a purchasing decision, check whether a manufacturer or product category currently has an active FDA recall, filtered by severity (`Class I` = most severe) via the `fdaClassification` input, alongside any related EU safety communication.
 - **Competitive and market intelligence** - watch a competitor's or category's recall and safety-alert activity across both US and EU jurisdictions in a single feed, segmented by the `jurisdiction` and `awarding_or_regulating_agency` fields on every record.
+
+## Quick start
+
+Run it straight from the Apify CLI - no code required (a Console "Run" click works the same way):
+
+```bash
+apify call actor-22-drug-safety-recalls-monitor --input '{
+  "sources": ["fda", "ema"],
+  "maxItemsPerSource": 50,
+  "onlyNew": true,
+  "dateRange": "7d",
+  "fdaClassification": ["Class I", "Class II"]
+}'
+```
+
+This pulls up to 50 newest records per regulator published in the last 7 days, restricted to FDA Class I/II severity, and (with `onlyNew: true`) delivers only records that are new or have changed since the previous run. Results land in the run's default dataset - see [Output](#output) below for the record shape. Full runnable Node.js and Python examples (using the `apify-client` package) are in `examples/node-usage.js` and `examples/python_usage.py` in this repo.
 
 ## Input
 
@@ -81,12 +104,22 @@ You can download the dataset in JSON, HTML, CSV, or Excel format, or pull it via
 
 **No fabricated "closed" event.** Neither regulator is known to remove a historical record once published - a `Terminated` FDA recall stays queryable, and EMA DHPCs are permanent regulator communications - and this Actor fetches a bounded, newest-first window per run rather than exhaustively walking each source's full register. So it never reports a record as removed or closed; it only reports what it can actually verify (new, changed, or unchanged).
 
-## Pricing
+## Pricing (Pay-Per-Event)
 
-Pay-per-event: **$0.001 per delivered record**, plus a small one-time Actor-start charge. A default run (100 records per source, both regulators enabled = up to 200 records) costs roughly $0.20. No idle-server or per-minute charges - you pay for delivered records, not runtime.
+This Actor bills on Apify's [Pay-Per-Event](https://apify.com/pricing) model - you pay only for records actually delivered, never for compute time, idle runtime, or per-minute usage.
+
+| Event name | Event title | Price |
+|---|---|---|
+| `result` | Drug Safety Recall/Alert Record | $0.001 per event |
+
+A default run (100 records per source, both regulators enabled = up to 200 records) costs roughly $0.20. The `result` event above is the only billed event - there is no separate platform or Actor-start fee.
 
 ## Support & Enterprise SLA
 
 This is an independent developer-run Actor, not a vendor-backed enterprise product - there is no contractual SLA, and none is claimed here. Issues, bugs, or source-coverage requests (e.g. a regulator not yet covered) can be filed via the Apify Store's Issues tab; typical response time is within about 48 hours.
 
 The mandatory `regulatoryDataDisclaimer` field on every record is a data-integrity feature, not a legal disclaimer bolted on to limit liability: both the FDA and EMA feeds this Actor reads are genuinely open, unauthenticated, publisher-sanctioned sources, and the disclaimer exists so downstream consumers always know, on a per-record basis, that what they're looking at is unverified regulator data - not medical advice, and not independently confirmed by this Actor - before they act on it.
+
+---
+
+This Actor is part of **Delta Registry** - pay-per-event regulatory & compliance data infrastructure built and operated by Stefano Seggio. For professional inquiries or enterprise licensing, connect on [LinkedIn](https://www.linkedin.com/in/stefanoseggio-deltaregistry); for the rest of the fleet, see [github.com/stefanoseggio](https://github.com/stefanoseggio).
