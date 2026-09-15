@@ -104,6 +104,40 @@ You can download the dataset in JSON, HTML, CSV, or Excel format, or pull it via
 
 **No fabricated "closed" event.** Neither regulator is known to remove a historical record once published - a `Terminated` FDA recall stays queryable, and EMA DHPCs are permanent regulator communications - and this Actor fetches a bounded, newest-first window per run rather than exhaustively walking each source's full register. So it never reports a record as removed or closed; it only reports what it can actually verify (new, changed, or unchanged).
 
+## Instant Terminal Run (cURL)
+
+Runs synchronously and returns the resulting dataset items directly in the response - no polling needed. Get your token from [console.apify.com/settings/integrations](https://console.apify.com/settings/integrations).
+
+```bash
+curl -X POST "https://api.apify.com/v2/acts/HJZvKxFUpZop6gIQ3/run-sync-get-dataset-items?token=<YOUR_API_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+  "maxItemsPerSource": 50,
+  "onlyNew": true
+}'
+```
+
+## Sample Extracted Dataset (JSON)
+
+One real record from this Actor's own dataset, matching `.actor/dataset_schema.json`:
+
+```json
+{
+  "recordSource": "fda_enforcement",
+  "record_id": "fda:D-0769-2026",
+  "event_type": "SANCTION",
+  "scraped_at": "2026-09-08T14:00:00.000Z",
+  "is_new": true,
+  "source_url": "https://api.fda.gov/drug/enforcement.json?search=recall_number:%22D-0769-2026%22",
+  "category_or_type": "Drugs",
+  "status_or_estado": "Ongoing",
+  "awarding_or_regulating_agency": "U.S. Food and Drug Administration (FDA)",
+  "classification": "Class I",
+  "productDescription": "Kian Pee Wan Capsules, 30-count bottles",
+  "reasonForRecall": "Marketed Without an Approved NDA/ANDA"
+}
+```
+
 ## Pricing (Pay-Per-Event)
 
 This Actor bills on Apify's [Pay-Per-Event](https://apify.com/pricing) model - you pay only for records actually delivered, never for compute time, idle runtime, or per-minute usage.
