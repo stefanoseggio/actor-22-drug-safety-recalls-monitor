@@ -1,0 +1,29 @@
+# Security Policy
+
+## Supported versions
+
+This Actor follows [semantic versioning](https://semver.org/) via automated release tagging (see [`.github/workflows/release.yml`](.github/workflows/release.yml)). Only the latest published major version receives security fixes — there is no long-term-support branch for older majors, consistent with this being a single-maintainer, independently-operated Actor rather than an enterprise product with a formal support matrix.
+
+## Reporting a vulnerability
+
+**Preferred: GitHub Private Vulnerability Reporting.** This repository has private vulnerability reporting enabled — go to the **Security** tab → **Report a vulnerability** to open a private advisory visible only to the maintainer until a fix is ready. This is the correct channel for anything that shouldn't be disclosed in a public issue (credential handling, injection risks, dependency CVEs affecting this Actor's real usage, etc.).
+
+**Do not** open a public GitHub issue for a suspected security vulnerability — use private reporting instead so the disclosure stays coordinated.
+
+## What's actually in scope
+
+This Actor's real attack surface, honestly assessed:
+
+- **No required credential.** This Actor needs no third-party API key to run. The optional `fdaApiKey` input field (marked secret in `.actor/input_schema.json`) exists solely to raise the caller's own openFDA rate ceiling — it is never required for normal use volumes, never pooled or stored beyond the run that used it, and if supplied is used only to authenticate the caller's own requests directly to openFDA.
+- **No user-supplied code execution.** Input is a fixed JSON schema (`sources`, `maxItemsPerSource`, `onlyNew`, `dateRange`, `fdaClassification`, `fdaApiKey`) validated against a real Zod schema (`src/schemas.ts`) — there is no arbitrary-code or arbitrary-URL input surface.
+- **Dependency vulnerabilities** in `package.json`'s real dependency tree (`apify`, `cheerio`, `zod`, `zod-to-json-schema`, and dev dependencies) are a real, ongoing concern — tracked via Dependabot (`.github/dependabot.yml`) and GitHub's own dependency/secret scanning, both enabled on this repository.
+- **Source-feed integrity** (a compromised or spoofed FDA/EMA endpoint) is outside this Actor's control — it fetches from each regulator's own official, publisher-sanctioned URLs over HTTPS and does not implement independent content-signing verification beyond standard TLS.
+- **Data-integrity, not medical, risk.** The mandatory `regulatoryDataDisclaimer` field on every record exists because this is unverified regulator data, not medical advice — a correctness bug here is a data-integrity issue, not a code-execution vulnerability, but is still taken seriously given the domain.
+
+## Response expectations
+
+This is an independently developed and maintained Actor with no contractual security SLA. In practice, security reports are typically triaged within 48 hours — the same disclosed norm as this Actor's general support triage (see the README's Support & Enterprise SLA section) — though there is no guaranteed fix timeline. Reports that turn out to be genuine, exploitable vulnerabilities will be credited in the fix's release notes unless the reporter requests otherwise.
+
+## Enterprise / institutional customers
+
+If your organization requires a signed security addendum, a formal disclosure SLA, or a security questionnaire completed as part of procurement, open an issue against this Actor's [Store page](https://apify.com/stefano_seggio/actor-22-drug-safety-recalls-monitor) or connect via [LinkedIn](https://www.linkedin.com/in/stefanoseggio-deltaregistry) — these are handled case-by-case, not something this file can commit to on Stefano's behalf.
