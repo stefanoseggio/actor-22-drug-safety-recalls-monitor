@@ -26,8 +26,9 @@ This Actor bills on Apify's [Pay-Per-Event](https://apify.com/pricing) model - y
 | Event name | What triggers it | Price |
 |---|---|---|
 | `result` | One drug-safety record delivered to the dataset: an FDA `SANCTION` or EMA `NEW_LISTING` on first sighting, or a `STATUS_CHANGE`/`UPDATED` record on a repeat sighting whose status or other tracked fields changed | $0.001 per event |
+| `apify-actor-start` | Apify's own synthetic per-run start event on every Pay-Per-Event Actor - charged automatically by the platform once per run (this Actor's code never calls it directly), covering the first 5 seconds of compute. Billed once per GB of memory allocated, minimum one charge; this Actor runs at 256-512MB, so it's always exactly one charge per run. | $0.00005 per run |
 
-A default run (100 records per source, both regulators enabled = up to 200 records) costs roughly $0.20. The `result` event above is the only billed event - there is no separate platform or Actor-start fee.
+A default run (100 records per source, both regulators enabled = up to 200 records) costs roughly $0.20 ($0.001 x 200 results, plus the flat $0.00005 actor-start charge above). The `result` event is the only event this Actor's own code charges for; `apify-actor-start` is a platform-level charge applied uniformly to every PPE Actor on Apify, not something specific to this one.
 
 **Unchanged records are not billed.** Every record gets a pair of SHA-1 fingerprints (`src/fingerprint.ts`) - one hashed over just its status field (FDA `status` or EMA `regulatory_outcome`), one over its other mutable fields. When `onlyNew: true`, any record whose fingerprint pair is identical to what was stored on the previous run (`SNAPSHOT_NO_DIFF`) is filtered out *before* `Actor.pushData()`/`Actor.charge()` ever runs (`src/main.ts`) - so an unchanged record costs $0.00. It is not charged and then refunded; it is never charged in the first place. With `onlyNew: false`, every fetched record is delivered and charged on every run regardless of whether it changed, which is why `onlyNew: true` is the recommended setting for recurring/scheduled monitoring.
 
