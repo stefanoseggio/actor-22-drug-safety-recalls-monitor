@@ -5,7 +5,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-D22128?style=flat-square)](./LICENSE)
 
-[![Run this Actor on Apify](https://apify.com/img/run-on-apify.svg)](https://apify.com/stefano_seggio/actor-22-drug-safety-recalls-monitor)
+[![Run this Actor on Apify](https://apify.com/ext/run-on-apify.png)](https://apify.com/stefano_seggio/actor-22-drug-safety-recalls-monitor)
 
 Monitors the FDA's openFDA drug enforcement (recall) API and the EMA's Direct Healthcare Professional Communications (DHPC) safety-alert feed — US and EU pharma safety data in one normalized, change-detected schema — on whichever schedule you configure via Apify's own Scheduler (there is no fixed built-in cadence).
 
@@ -105,6 +105,61 @@ console.log(`\nTotal records: ${items.length}`);
 
 Full runnable copies of the Python and Node.js examples above also live in `examples/python_usage.py` and `examples/node-usage.js` in this repo.
 
+## Use this from Claude Desktop, Cursor, or Windsurf (via MCP)
+
+This Actor is also reachable through Apify's own hosted `@apify/actors-mcp-server` at `https://mcp.apify.com`, scoped to just this one Actor via a `?tools=stefano_seggio/actor-22-drug-safety-recalls-monitor` query string - your MCP client gets tool access to this Actor alone, not the rest of the fleet. Get your own token from [Apify Console → Settings → Integrations](https://console.apify.com/settings/integrations) first.
+
+**Claude Desktop** (`claude_desktop_config.json`) - uses the `mcp-remote` stdio bridge, not a direct URL. Note: `mcp-remote` does not expand shell environment variables inside this JSON string, so paste your real token literally in place of `${APIFY_TOKEN}` below, and keep this file out of version control:
+
+```json
+{
+  "mcpServers": {
+    "delta-registry-actor-22-drug-safety-recalls-monitor": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.apify.com/?tools=stefano_seggio/actor-22-drug-safety-recalls-monitor",
+        "--header",
+        "Authorization: Bearer ${APIFY_TOKEN}"
+      ]
+    }
+  }
+}
+```
+
+**Cursor** (`.cursor/mcp.json` or `~/.cursor/mcp.json`) - native HTTP transport:
+
+```json
+{
+  "mcpServers": {
+    "delta-registry-actor-22-drug-safety-recalls-monitor": {
+      "url": "https://mcp.apify.com/?tools=stefano_seggio/actor-22-drug-safety-recalls-monitor",
+      "headers": {
+        "Authorization": "Bearer ${APIFY_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+**Windsurf** (`~/.codeium/windsurf/mcp_config.json`) - uses `serverUrl`, not `url`. Unlike Claude Desktop's `mcp-remote` bridge, Windsurf's `${env:...}` syntax genuinely resolves from your environment at runtime:
+
+```json
+{
+  "mcpServers": {
+    "delta-registry-actor-22-drug-safety-recalls-monitor": {
+      "serverUrl": "https://mcp.apify.com/?tools=stefano_seggio/actor-22-drug-safety-recalls-monitor",
+      "headers": {
+        "Authorization": "Bearer ${env:APIFY_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+Want every actor in the fleet available to one MCP client instead of just this one? See [`delta-registry-website/MCP_INTEGRATION.md`](https://github.com/stefanoseggio/delta-registry-website/blob/main/MCP_INTEGRATION.md) for the full 28-actor closed-scope config.
+
 ## Input & Output Schema
 
 ### Input
@@ -165,6 +220,8 @@ One real record from this Actor's own dataset, matching `.actor/dataset_schema.j
 | `is_new` | `true` if this is the first time this `record_id` has been seen. |
 | `source_url` | Direct link back to the regulator's own API query or record for this item. |
 | `recipient_or_defendant_name` | Firm/manufacturer name (FDA) or equivalent named party. |
+| `effective_date_iso` | Normalized ISO date the recall/alert took effect: FDA `recall_initiation_date`, EMA `dissemination_date`. Real per-record data, not always-null. |
+| `publish_date_iso` | Normalized ISO date the record was first published: FDA `report_date`, EMA `first_published_date`. Real per-record data, not always-null. |
 | `category_or_type` | Always `"Drugs"` for this Actor's scope. |
 | `status_or_estado` | FDA `status` (`Ongoing`/`Terminated`/`Completed`) or EMA `regulatory_outcome`. |
 | `awarding_or_regulating_agency` | The regulator that issued the recall or alert (e.g. FDA, EMA). |
