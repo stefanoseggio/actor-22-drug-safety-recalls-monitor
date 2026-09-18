@@ -221,6 +221,7 @@ One real record from this Actor's own dataset, matching `.actor/dataset_schema.j
 | `is_new` | `true` if this is the first time this `record_id` has been seen. |
 | `source_url` | Direct link back to the regulator's own API query or record for this item. |
 | `recipient_or_defendant_name` | Firm/manufacturer name (FDA) or equivalent named party. |
+| `entity_identifier_native` | Source-native secondary identifier: FDA `event_id`, or EMA `atc_code_human` (ATC classification code). Real per-record data, mirrored for convenience on the FDA-only `eventId` / EMA-only `atcCodeHuman` fields below. |
 | `effective_date_iso` | Normalized ISO date the recall/alert took effect: FDA `recall_initiation_date`, EMA `dissemination_date`. Real per-record data, not always-null. |
 | `publish_date_iso` | Normalized ISO date the record was first published: FDA `report_date`, EMA `first_published_date`. Real per-record data, not always-null. |
 | `category_or_type` | Always `"Drugs"` for this Actor's scope. |
@@ -229,6 +230,7 @@ One real record from this Actor's own dataset, matching `.actor/dataset_schema.j
 | `jurisdiction` | `US` or `EU`. |
 | `reference_number` | The regulator's own reference/recall number. |
 | `regulatoryDataDisclaimer` | Mandatory on every record - see Reliability below. |
+| `value_native`, `value_currency`, `value_usd_normalized`, `source_document_url` | Part of the shared 18-field envelope used fleet-wide (e.g. for monetary contract-value actors), but always `null` on this Actor's records - drug recalls and safety alerts carry no monetary value, and neither source exposes a document endpoint distinct from `source_url`. |
 | *(FDA-only)* | `classification`, `productDescription`, `reasonForRecall`, `recallingFirm`, `distributionPattern`, `voluntaryMandated`, `recallNumber`, `eventId`, `city`, `state`, `country` - null on EMA records. |
 | *(EMA-only)* | `nameOfMedicine`, `activeSubstances`, `dhpcType`, `atcCodeHuman`, `therapeuticAreaMesh`, `procedureNumber`, `regulatoryOutcome` - null on FDA records. |
 
