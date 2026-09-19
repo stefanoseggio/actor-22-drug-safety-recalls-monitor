@@ -1,6 +1,6 @@
 {
     "name": "actor-22-drug-safety-recalls-monitor",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "type": "module",
     "description": "Regulatory Medical Recalls & Drug Safety Monitor: combines the FDA's openFDA drug enforcement (recall) API and the EMA's Direct Healthcare Professional Communications (DHPC) safety-alert feed into one Unified Master Schema stream, each record carrying a mandatory, non-removable regulatory-data disclaimer.",
     "engines": {
