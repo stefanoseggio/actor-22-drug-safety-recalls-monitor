@@ -7,6 +7,33 @@ Regulatory Medical Recalls & Drug Safety Monitor. Combines two independent, live
 
 Both sources' raw shapes are captured verbatim in `test/fixtures/*.json` from real live requests - never assume a field's shape without checking those fixtures or the source comments in `src/sources/*.ts`.
 
+## HTTP transport: `impit`, not the native `fetch`
+
+`src/http.ts`'s `fetchTextWithRetry`/`fetchJsonWithRetry` call a module-level
+`Impit` instance (`new Impit({ browser: 'chrome' })`, from the `impit`
+package) instead of the global `fetch` - added 2026-09-19 as a fleet-wide
+TLS-fingerprint-hardening pilot (proactive hardening, not a bug fix - Node's
+`fetch` isn't deprecated, and neither openFDA nor EMA has ever shown any
+CAPTCHA/WAF/bot-detection behaviour against this actor). `impit` gives every
+request a real, internally-consistent Chrome TLS/HTTP2 fingerprint instead
+of Node's own (distinctively bot-shaped) one. Two things to know if you
+touch this file again:
+- **`impit`'s own `RequestInit` type is narrower than the DOM's** - its
+  `method` field is a fixed `HttpMethod` union, not `string`.
+  `fetchTextWithRetry`/`fetchJsonWithRetry` are typed against
+  `RequestInit as ImpitRequestInit` from `'impit'` for this reason; don't
+  revert that import to the global DOM type without re-checking `tsc`
+  passes.
+- **`Impit.fetch()` is a native binding, not built on the global `fetch`.**
+  The old `test/http.test.ts` used `vi.spyOn(globalThis, 'fetch')`, which
+  would NOT intercept it - it would do nothing and the real network call
+  would go out, silently hitting the live FDA/EMA endpoints instead of the
+  mock. `test/http.test.ts` now mocks the `impit` module itself
+  (`vi.mock('impit', ...)`, with `vi.hoisted()` for the mock function
+  reference, and a real `function` - not an arrow function - as the mock's
+  `Impit` implementation, since `new Impit(...)` requires a constructible
+  mock). Keep that pattern if this file's tests are extended.
+
 ## V2 delta engine (added 2026-09-08)
 
 This actor was one of 5 found on the account outside the original 9-actor V2 migration mandate (see `_audit/fleet_v2_reconciliation_report.md` in the portfolio root for the full discovery story). Before this pass it had a real, correctly-implemented named key-value store (`Actor.openKeyValueStore()`, not the run-scoped `Actor.getValue()`/`setValue()` bug found on a sibling actor the same day) but only flat seen-id tracking - `event_type` was a hardcoded constant per source, never actually computed from a diff.

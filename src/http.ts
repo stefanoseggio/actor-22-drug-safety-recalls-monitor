@@ -1,8 +1,16 @@
+import { Impit, type RequestInit as ImpitRequestInit } from 'impit';
+
 async function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => {
         setTimeout(resolve, ms);
     });
 }
+
+// One Impit instance per actor run: it holds the connection pool and TLS
+// session cache, and gives every request a real, internally-consistent
+// Chrome TLS/HTTP2 fingerprint instead of Node's native (and distinctively
+// bot-shaped) one - see AGENTS.md for why this was added.
+const impit = new Impit({ browser: 'chrome' });
 
 // ---------------------------------------------------------------------------
 // Verified live targets (2026-09-07) - both are genuinely open, structured,
@@ -96,14 +104,14 @@ function isRetryableStatus(status: number): boolean {
 /** Plain fetch()-with-exponential-backoff-and-jitter retry against a fully-qualified URL, honoring `Retry-After` on 429/503 when the server sends one. No proxy - both targets are verified open (see comment block above). */
 export async function fetchTextWithRetry(
     url: string,
-    init: RequestInit = {},
+    init: ImpitRequestInit = {},
     maxRetries = DEFAULT_MAX_RETRIES,
     baseDelayMs = DEFAULT_BASE_DELAY_MS,
 ): Promise<string> {
     let lastError: Error = new Error('unreachable');
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
-            const response = await fetch(url, { redirect: 'follow', ...init });
+            const response = await impit.fetch(url, { redirect: 'follow', ...init });
             if (!response.ok) {
                 const body = await response.text().catch(() => '');
                 const retryAfterMs = parseRetryAfterMs(response.headers.get('retry-after'));
@@ -134,7 +142,7 @@ export async function fetchTextWithRetry(
 }
 
 /** JSON convenience wrapper over fetchTextWithRetry - both FDA and EMA targets are JSON APIs/exports. */
-export async function fetchJsonWithRetry<T>(url: string, init: RequestInit = {}, maxRetries = DEFAULT_MAX_RETRIES, baseDelayMs = DEFAULT_BASE_DELAY_MS): Promise<T> {
+export async function fetchJsonWithRetry<T>(url: string, init: ImpitRequestInit = {}, maxRetries = DEFAULT_MAX_RETRIES, baseDelayMs = DEFAULT_BASE_DELAY_MS): Promise<T> {
     const text = await fetchTextWithRetry(url, init, maxRetries, baseDelayMs);
     return JSON.parse(text) as T;
 }
