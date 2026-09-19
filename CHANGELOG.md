@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.1.0](https://github.com/stefanoseggio/actor-22-drug-safety-recalls-monitor/compare/actor-22-drug-safety-recalls-monitor-v2.0.0...actor-22-drug-safety-recalls-monitor-v2.1.0) (2026-09-19)
+
+
+### Features
+
+* V2 delta engine + fix critical HTTP 429 retry bug (2.0.0) ([d800787](https://github.com/stefanoseggio/actor-22-drug-safety-recalls-monitor/commit/d80078717cea42308dee65091871ca869d5a3101))
+
+
+### Bug Fixes
+
+* add Dockerfile build step, matching the fleet's working pattern ([#9](https://github.com/stefanoseggio/actor-22-drug-safety-recalls-monitor/issues/9)) ([d26649b](https://github.com/stefanoseggio/actor-22-drug-safety-recalls-monitor/commit/d26649bd89229fd2d154caaaa09620d6bb9c4365))
+* **ci:** pass RELEASE_PLEASE_TOKEN so release PRs skip the bot-approval gate ([6015b13](https://github.com/stefanoseggio/actor-22-drug-safety-recalls-monitor/commit/6015b132bd1f99f80026322fdfccab715f1d084c))
+* ship dist/ - implicit Apify build never runs tsc ([afe085f](https://github.com/stefanoseggio/actor-22-drug-safety-recalls-monitor/commit/afe085fe494cda9e404568dfc0206e56f17cbec1))
+
 ## 2.0.0 - 2026-09-08
 
 ### Fixed
